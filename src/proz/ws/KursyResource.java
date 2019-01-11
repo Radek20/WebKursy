@@ -1,4 +1,5 @@
 package proz.ws;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -12,53 +13,44 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
+import javax.xml.bind.JAXB;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 @Path("rates")
 public class KursyResource {
-	/*
 	@GET
-	@Produces({ MediaType.APPLICATION_XML })
-	public String getXML(@PathParam("table") String table, @PathParam("code") String code, @PathParam("topCount") String topCount) {
-		System.out.println("GET!!!!"+table+"!"+code+"!"+topCount);
-		Kursy kursy = pobierzKursy(table,code,topCount);
-		kursy.getDane();
+	@Produces({ MediaType.APPLICATION_JSON })
+	public String getJSON(@PathParam("table") String table, @PathParam("code") String code, @PathParam("topCount") String topCount) {
+
 		return "aaa";
 	}
 
 	@GET
 	@Produces({ MediaType.TEXT_XML })
-	public String getHTML(@PathParam("table") String table, @PathParam("code") String code, @PathParam("topCount") String topCount) {
-		System.out.println("GET xml!!!!"+table+"!"+code+"!"+topCount);
-		Kursy kursy = pobierzKursy(table,code,topCount);
-		kursy.getDane();
-		return "bbb";
+	public String getXML(@PathParam("table") String table, @PathParam("code") String code, @PathParam("topCount") String topCount) {
+		String average = process(table, code, topCount);
+		return "<?xml version=\"1.0\"?>" + "<Average>" + average + "</Average>";
 	}
 	
 	@GET
-	@Produces({ MediaType.TEXT_PLAIN })
+	@Produces({ MediaType.TEXT_HTML })
 	public String getText(@PathParam("table") String table, @PathParam("code") String code, @PathParam("topCount") String topCount) {
-		System.out.println("GET plain!!!!"+table+"!"+code+"!"+topCount);
-		Kursy kursy = pobierzKursy(table,code,topCount);
-		kursy.getDane();
+
 		return "ccc";
 	}
-*/
+
 	@GET
 	@Path("{table}/{code}/{topCount}")
 	@Produces(MediaType.TEXT_PLAIN)
 	//@Produces(MediaType.TEXT_HTML)
 	//@Produces({ MediaType.TEXT_HTML })
 	public String getHtml(@PathParam("table") String table, @PathParam("code") String code, @PathParam("topCount") String topCount) {
-		//System.out.println("GET plain!!!!"+table+"!"+code+"!"+topCount);
-		//Kursy kursy = pobierzKursy(table,code,topCount);
-		//kursy.getDane();
-		//String resp = KursyKlient.pobierzKursy(table, code, topCount);
+		String resp = KursyKlient.pobierzKursy(table, code, topCount);
 		Kursy kursy=null;
 		try {
-			kursy = unMarshaling(table,code,topCount);
+			kursy = unMarshaling(resp);
 		} catch (JAXBException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -73,24 +65,23 @@ public class KursyResource {
 		return "Hello";
 	}
 	
-	private static Kursy unMarshaling(String table, String code, String topCount ) throws JAXBException
+	private static Kursy unMarshaling(String xmlAnswer) throws JAXBException
 	{
-	    JAXBContext jaxbContext = JAXBContext.newInstance(Kursy.class);
-	    Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-	    URL url=null;
+		Kursy kursy = JAXB.unmarshal(new StringReader(xmlAnswer), Kursy.class);
+	    
+	    return kursy;
+	}
+	
+	private static String process(String table, String code, String topCount) {
+		String resp = KursyKlient.pobierzKursy(table, code, topCount);
+		Kursy kursy=null;
 		try {
-			url = new URL("http://api.nbp.pl/api/exchangerates/rates/" + table + "/" + code + "/last/" + topCount + "/");
-		} catch (MalformedURLException e) {
+			kursy = unMarshaling(resp);
+		} catch (JAXBException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	 
-	    
-	    if(url!=null) {
-	    	Kursy emps = (Kursy) jaxbUnmarshaller.unmarshal( url );
-	    	return emps;
-	    }
-	    
-	    return null;
+		double average=kursy.countAverage();
+		return Double.toString(average);
 	}
 }

@@ -40,7 +40,7 @@ public class Kursy_STARE {
 		double suma=0;
 		double ile=0;
 		
-		return
+		return 0;
 	}
 }
 
