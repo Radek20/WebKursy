@@ -31,7 +31,7 @@ public class KursyResource {
 	@Produces({ MediaType.TEXT_XML })
 	public String getXML(@PathParam("table") String table, @PathParam("code") String code, @PathParam("topCount") String topCount) {
 		String average = process(table, code, topCount);
-		return "<?xml version=\"1.0\"?>" + "<Average>" + average + "</Average>";
+		return "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + "<Average><Value>" + average + "</Value></Average>";
 	}
 	
 	@GET
